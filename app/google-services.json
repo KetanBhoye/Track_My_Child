@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "244127308477",
+    "project_id": "track-my-child-213c1",
+    "storage_bucket": "track-my-child-213c1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:244127308477:android:f5f0c435bceb90804875d4",
+        "android_client_info": {
+          "package_name": "com.example.trackmychild"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "244127308477-sfh6l4fun51ths4bhe1a82fs8ppoin9j.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAxZj1e-XHtUotqN1o_NQWjLE9wSbv1RcI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "244127308477-sfh6l4fun51ths4bhe1a82fs8ppoin9j.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
