@@ -57,5 +57,6 @@ public class Spalsh_Screen extends AppCompatActivity
                 }
             }
         }, SPLASH_SCREEN);
+
     }
 }

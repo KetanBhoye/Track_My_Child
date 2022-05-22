@@ -43,6 +43,7 @@ public class driver_login extends AppCompatActivity
             public void onClick(View v)
             {
                 Intent intent = new Intent(driver_login.this, Child_tracklocation.class);
+                finish();
 
                 name = name_edittext.getText().toString();
                 phone = phone_edittext.getText().toString();

@@ -9,6 +9,7 @@ import android.location.Location;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,10 +38,15 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 
 public class Child_tracklocation<ValueEventListener> extends AppCompatActivity implements OnMapReadyCallback
@@ -48,6 +54,7 @@ public class Child_tracklocation<ValueEventListener> extends AppCompatActivity i
 
     GoogleMap mGoogleMap;
     SupportMapFragment mapFrag;
+    private FirebaseAuth mAuth;
     LocationRequest mLocationRequest;
     Location mLastLocation;
     Marker mCurrLocationMarker;
@@ -56,9 +63,12 @@ public class Child_tracklocation<ValueEventListener> extends AppCompatActivity i
     String licence_no,email,phone,name;
     DatabaseHelper databaseHelper;
     Location location;
+    String Securekey;
+    boolean College = false;
+    int hourOfDay;
 
 
-    int route=0;
+    String Childusername;
     boolean route_selected = false;
 
     private final String CHANNEL_ID = "simple_notification";
@@ -68,6 +78,7 @@ public class Child_tracklocation<ValueEventListener> extends AppCompatActivity i
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
+        mAuth = FirebaseAuth.getInstance();
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.driver_tracklocation);
@@ -98,6 +109,7 @@ public class Child_tracklocation<ValueEventListener> extends AppCompatActivity i
         mapFrag = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         assert mapFrag != null;
         mapFrag.getMapAsync(this);
+
     }
 
     @Override
@@ -123,83 +135,37 @@ public class Child_tracklocation<ValueEventListener> extends AppCompatActivity i
             sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, shareBody);
             startActivity(Intent.createChooser(sharingIntent, "Share via"));
         }
-        else
+        if(id==R.id.about)
         {
             Intent intent = new Intent(Child_tracklocation.this,about.class);
             startActivity(intent);
         }
+
 
         return super.onOptionsItemSelected(item);
     }
 
     public void route_dialog()
     {
-        // setup the alert builder
-        final AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
-        builder1.setTitle("Are you Child");
 
-        builder1.setCancelable(false);
-
-
-
-        // add a radio button list
-        String[] routes = {"Yes", "No"};
-
-        int checkedItem = route-1;
-
-        builder1.setSingleChoiceItems(routes, checkedItem, new DialogInterface.OnClickListener()
+        Cursor res = databaseHelper.getData("1");
+        if(res.moveToFirst())
         {
-            @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
+            name = res.getString(1);
+            phone = res.getString(2);
+            licence_no = res.getString(3);
+            email = res.getString(4);
+        }
 
-                // user checked an item
-                switch(which)
-                {
-                    case 0: route = 1;  break;
-                    case 1:{
-                        route = 2;
-                        Intent intent = new Intent(Child_tracklocation.this,MapsActivity.class);
-                        startActivity(intent);
-                        break;}
-
-                    case 2: route = 3;  break;
-                    case 3: route = 4;  break;
-                    case 4: route = 5;  break;
-                }
-            }
-        });
-        // add OK and Cancel buttons
-        builder1.setPositiveButton("OK", new DialogInterface.OnClickListener()
-        {
-            @Override
-            public void onClick(DialogInterface dialog, int which)
-            {
-                // user clicked OK
-
-                route_selected = true;
-
-                Cursor res = databaseHelper.getData("1");
-                if(res.moveToFirst())
-                {
-                    name = res.getString(1);
-                    phone = res.getString(2);
-                    licence_no = res.getString(3);
-                    email = res.getString(4);
-                }
-
-            }
-        });
-        builder1.setNegativeButton("Cancel", null);
-        // create and show the alert dialog
-        final AlertDialog dialog1 = builder1.create();
-        dialog1.show();
+        Childusername= res.getString(1);
+        route_selected = true;
     }
 
     @Override
     public void onPause()
     {
         super.onPause();
+
 
         //stop location updates when Activity is no longer active
         // if (mFusedLocationClient != null)
@@ -236,10 +202,22 @@ public class Child_tracklocation<ValueEventListener> extends AppCompatActivity i
             //Request Location Permission
             checkLocationPermission();
         }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+        {
+            //Location Permission already granted
+            mFusedLocationClient.requestLocationUpdates(mLocationRequest, mLocationCallback, Looper.myLooper());
+            mGoogleMap.setMyLocationEnabled(true);
+        }
+        else
+        {
+            //Request Location Permission
+            checkLocationPermission();
+        }
     }
 
     LocationCallback mLocationCallback = new LocationCallback()
     {
+
         @Override
         public void onLocationResult(LocationResult locationResult)
         {
@@ -259,24 +237,25 @@ public class Child_tracklocation<ValueEventListener> extends AppCompatActivity i
 
                 if(route_selected)
                 {
-                    Toast.makeText(Child_tracklocation.this, "Location Sent : " + location.getLatitude() + "   " + location.getLongitude(), Toast.LENGTH_LONG).show();
+                    // Toast.makeText(Child_tracklocation.this, "Location Sent : " + location.getLatitude() + "   " + location.getLongitude(), Toast.LENGTH_LONG).show();
 
                     final DatabaseReference reference = database.getReference();      //return the path to the root
 
-                    reference.child(route + "").child("Latitude").setValue(location.getLatitude()).addOnCompleteListener(new OnCompleteListener<Void>()
+                    reference.child(Childusername + "").child("Latitude").setValue(location.getLatitude()).addOnCompleteListener(new OnCompleteListener<Void>()
                     {
                         @Override
                         public void onComplete(@NonNull Task<Void> task)
                         {
                             if (task.isSuccessful())
                             {
-                                reference.child(route + "").child("Longitude").setValue(location.getLongitude());
-                                reference.child(route + "").child("Name").setValue(name);
-                                reference.child(route + "").child("Phone").setValue(phone);
-                                reference.child(route + "").child("Licence_no").setValue(licence_no);
-                                reference.child(route + "").child("Email").setValue(email);
+                                reference.child(Childusername + "").child("Longitude").setValue(location.getLongitude());
+                                reference.child(Childusername + "").child("Name").setValue(name);
+                                reference.child(Childusername + "").child("Phone").setValue(phone);
+                                reference.child(Childusername + "").child("Licence_no").setValue(licence_no);
+                                reference.child(Childusername + "").child("Email").setValue(email);
                             }
                         }
+
                     });
                 }
 
@@ -294,9 +273,81 @@ public class Child_tracklocation<ValueEventListener> extends AppCompatActivity i
 
                 //move map camera
                 mGoogleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18));
+
+
+                double lat2 = location.getLatitude();
+                double lng2 = location.getLongitude();
+                //location of bvit
+                double lat1 = 19.026665700171616;
+                double lng1 = 73.05507713101898;
+
+                SimpleDateFormat format = new SimpleDateFormat("HH", Locale.US);
+                String hour;
+                hour = format.format(new Date());
+                Calendar calendar = Calendar.getInstance();
+                hourOfDay = calendar.get(Calendar.HOUR_OF_DAY);
+
+
+
+
+
+                if(distance(lat1, lng1, lat2, lng2)< 0.1 && hourOfDay >=9 && hourOfDay<=16){
+
+                    College = true;
+                    Toast.makeText(Child_tracklocation.this, "AT Bvit", Toast.LENGTH_SHORT).show();
+
+                }
+
             }
+
         }
+
+        /** calculates the distance between two locations in MILES */
+        private double distance(double lat1, double lng1, double lat2, double lng2) {
+
+            double earthRadius = 3958.75; // in miles, change to 6371 for kilometer output
+
+            double dLat = Math.toRadians(lat2-lat1);
+            double dLng = Math.toRadians(lng2-lng1);
+
+            double sindLat = Math.sin(dLat / 2);
+            double sindLng = Math.sin(dLng / 2);
+
+            double a = Math.pow(sindLat, 2) + Math.pow(sindLng, 2)
+                    * Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2));
+
+            double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+            double dist = earthRadius * c;
+
+            return dist; // output distance, in MILES
+        }
+
+
     };
+
+    public void sendSMS(){
+        if(College){
+
+            SmsManager smsManager= SmsManager.getDefault();
+
+            Date currentTime = Calendar.getInstance().getTime();
+            String msg = "Your Child is reached College, on " + currentTime + " Check app for live location !" + "\n -Team Track My Child" ;
+            smsManager.sendTextMessage(phone,null,msg,null,null);
+            Toast.makeText(getApplicationContext(),"Message Sent",Toast.LENGTH_LONG).show();
+        }
+        else if(hourOfDay >=9 && hourOfDay<=16) {
+
+            SmsManager smsManager= SmsManager.getDefault();
+
+            Date currentTime = Calendar.getInstance().getTime();
+            String msg = "Your Child is not in College Contact your child   " + currentTime + " Check app for live location !" + "\n -Team Track My Child" ;
+            smsManager.sendTextMessage(phone,null,msg,null,null);
+            // Toast.makeText(getApplicationContext(),"Message Sent",Toast.LENGTH_LONG).show();
+        }
+    }
+
+
 
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     private void checkLocationPermission()
@@ -359,6 +410,7 @@ public class Child_tracklocation<ValueEventListener> extends AppCompatActivity i
             // permissions this app might request
         }
     }
+
 
 
 

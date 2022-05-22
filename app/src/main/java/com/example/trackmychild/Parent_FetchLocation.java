@@ -8,12 +8,14 @@ import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Looper;
+import android.text.InputType;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -55,7 +57,7 @@ public class Parent_FetchLocation extends AppCompatActivity implements OnMapRead
     Marker mCurrLocationMarker;
     FusedLocationProviderClient mFusedLocationClient;
     FirebaseDatabase database;      // used for store URLs of uploaded files
-    int route = 0;
+    String Childusername;
     double latitude, longitude;
     FloatingActionButton floatingActionButton;
     TextView name, phone, email, licence;
@@ -137,7 +139,8 @@ public class Parent_FetchLocation extends AppCompatActivity implements OnMapRead
         floatingActionButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child(route + "");//reference inside Uploads
+                DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child(Childusername + "");//reference inside Uploads
+
 
                 databaseReference.addChildEventListener(new ChildEventListener() {
                     @Override
@@ -157,10 +160,13 @@ public class Parent_FetchLocation extends AppCompatActivity implements OnMapRead
                         phone.setText("Phone No.  : " + phone1);
                         email.setText("Email  : " + email1);
                         licence.setText("Roll No. :  " + licence1);
+
                     }
 
                     @Override
                     public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+
+
                     }
 
                     @Override
@@ -175,6 +181,7 @@ public class Parent_FetchLocation extends AppCompatActivity implements OnMapRead
 
                     @Override
                     public void onCancelled(@NonNull DatabaseError error) {
+
 
                     }
                 });
@@ -224,56 +231,38 @@ public class Parent_FetchLocation extends AppCompatActivity implements OnMapRead
         return super.onOptionsItemSelected(item);
     }
 
+
     public void route_dialog() {
-        // setup the alert builder
-        final AlertDialog.Builder builder1 = new AlertDialog.Builder(this);
-        builder1.setTitle("Are You Parent ?");
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Enter Child's Name ");
 
-        builder1.setCancelable(false);
+// Set up the input
+        final EditText input = new EditText(this);
+// Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
+        input.setInputType(InputType.TYPE_CLASS_TEXT );
+        builder.setView(input);
 
-        // add a radio button list
-        String[] routes = {"Yes","No"};
-
-        int checkedItem = route - 1;
-
-        builder1.setSingleChoiceItems(routes, checkedItem, new DialogInterface.OnClickListener() {
+// Set up the buttons
+        builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                // user checked an item
-                switch (which) {
-                    case 0:
-                        route = 1;
-                        break;
-                    case 1:
-                        route = 2;
-                        Intent intent = new Intent(Parent_FetchLocation.this,MapsActivity.class);
-                        startActivity(intent);
-                        break;
-                    case 2:
-                        route = 3;
-                        break;
-                    case 3:
-                        route = 4;
-                        break;
-                    case 4:
-                        route = 5;
-                        break;
+
+                Childusername= input.getText().toString();
+                if(Childusername != null){
+                    onMapReady(mGoogleMap);
                 }
+
+
             }
         });
-        // add OK and Cancel buttons
-        builder1.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-
-
-                onMapReady(mGoogleMap);
+                dialog.cancel();
             }
         });
-        builder1.setNegativeButton("Cancel", null);
-        // create and show the alert dialog
-        final AlertDialog dialog1 = builder1.create();
-        dialog1.show();
+
+        builder.show();
     }
 
     @Override
@@ -315,7 +304,7 @@ public class Parent_FetchLocation extends AppCompatActivity implements OnMapRead
                         }
 
 
-                        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child(route + "");//reference inside Uploads
+                        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child(Childusername + "");//reference inside Uploads
 
                         databaseReference.addChildEventListener(new ChildEventListener() {
                             @Override
@@ -389,7 +378,9 @@ public class Parent_FetchLocation extends AppCompatActivity implements OnMapRead
                             @Override
                             public void onCancelled(@NonNull DatabaseError error) {
 
+
                             }
+
                         });
                     }
                 }
